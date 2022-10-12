@@ -1,0 +1,9 @@
+select * from ExcelToSQLViaDLL 
+
+
+
+drop proc Upload_ExcelToSQLViaDLL
+
+drop type typExcelToSQLViaDLL
+
+drop table ExcelToSQLViaDLL

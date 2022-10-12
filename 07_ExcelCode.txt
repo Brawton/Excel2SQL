@@ -1,0 +1,93 @@
+Public Sub run()
+    Dim StartTime As Date
+    Dim StopTime As Date
+    Dim TimeDiff As Single
+    
+    StartTime = Now
+
+
+    Dim rs As New Recordset
+    Set rs = Create_XML_Table("Sheet1", "A", "C", True)
+    
+ 
+    Dim objCalc As ClassLibrary3.dbUtility
+    Set objCalc = New ClassLibrary3.dbUtility
+
+    Dim cs As String
+    cs = con_Access_ADO()
+
+    Dim rtn As String
+    rtn = objCalc.Upload(cs, "UploadDave", rs)
+
+    StopTime = Now
+    TimeDiff = Abs(StopTime - StartTime) * 86400
+
+    msgbox "Save Complete in " & TimeDiff & " second(s)", vbokOnly + vbInformation, "Status"
+
+End Sub
+
+Private Function Create_XML_Table(ByVal mWorksheet As String, ByVal mFirstColumnOfData As String, ByVal mLastColumn As String, ByVal Header As Boolean) As Recordset
+    '-----------------------------------------------------------------------------
+    'Description : Create XML Data of Spreadsheet to convert it to a Recordset which is easier to manipulate when saving
+    '
+    'Revision History
+    '------------------
+    '
+    'Who  Date         Comment
+    '---  -----------  -----------------------------------------------------------
+    'DAW  24/04/2019   Initial Version
+    '
+    '-----------------------------------------------------------------------------
+
+    Dim WSP1 As Worksheet
+    
+    ' Can change worksheet name to pick up relevant file-tab
+    
+    Set WSP1 = Worksheets(mWorksheet)
+    WSP1.Activate
+
+    'WSP1.Range(mFirstColumn & "1:" & mLastColumn & "1").Clear
+    
+
+    Dim LastRow As Long
+    With WSP1
+        LastRow = .Cells(.Rows.Count, mFirstColumnOfData).End(xlUp).Row
+
+    End With
+         
+    ' Convert data XML to a recordset
+    Dim xlXML             As Object
+    Dim rng               As Range
+         
+       
+    Dim adoRecordset      As Object
+
+    Dim startCell As String
+    startCell = mFirstColumnOfData
+    If Header = True Then
+        startCell = startCell + "2"
+    Else
+        startCell = startCell + "1"
+    End If
+    
+    Set rng = ActiveSheet.Range(startCell & ":" & mLastColumn & LastRow)
+    Set adoRecordset = CreateObject("ADODB.Recordset")
+    Set xlXML = CreateObject("MSXML2.DOMDocument")
+    xlXML.LoadXML rng.Value(xlRangeValueMSPersistXML)
+    adoRecordset.Open xlXML
+        
+    
+    Set Create_XML_Table = adoRecordset
+
+End Function
+
+Public Function con_Access_ADO()
+    Dim ConnectionString As String
+
+    'UserName/Password connection
+    ConnectionString = "SERVER=YourServer\Instance;Trusted_Connection=no;Uid=user;Pwd=Password;Initial Catalog=Datbase"
+    
+    con_Access_ADO = ConnectionString
+End Function
+
+

@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using System.Data.SqlClient;
+using System.Data;
+
+
+namespace Excel2SQL
+{
+
+    [ComVisible(true)]
+    public class dbUtitility
+    {
+        public dbUtitility()
+        {
+            // This is the contructor method
+        }
+
+        public string Upload(string consString, string StoredProcedure, ADODB.Recordset recordset)
+        {
+               
+            // Create an Adapter to Push data from Recordset into
+            var myDA = new System.Data.OleDb.OleDbDataAdapter();
+            var myDS = new DataSet();
+            myDA.Fill(myDS, recordset, "MyTable");
+
+
+            // Using the dataset pull out the newly created datatable
+            string rtn = "";
+
+            DataTable dt = myDS.Tables[0];
+
+            // record how many rows are in the datatable. This is passed back to excel if no errors occur.
+            rtn = dt.Rows.Count.ToString();
+
+            try
+            {
+                // Using the connection string provided connect to Database
+                using (var con = new SqlConnection(consString))
+                {
+
+                    // Using the Stored Procedure provided 
+                    using (var cmd = new SqlCommand(StoredProcedure))
+                    {
+                        // Set up the Command 
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Connection = con;
+
+                        // Pass the datatable as a parameter to the Stored procedure
+                        cmd.Parameters.AddWithValue("@tbl", dt);
+
+                        con.Open();
+
+                        // Now all set up Fire the Command
+                        var dtb = new DataTable();
+                        using (var dad = new SqlDataAdapter(cmd))
+                        {
+                            dad.Fill(dtb);
+                        }
+
+                        // Close the conection 
+                        con.Close();
+
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                rtn = ex.Message;
+            }
+
+            return rtn;
+        }
+    }
+}
+
